@@ -1,0 +1,11 @@
+.app-functions {
+    display: flex;
+    flex-flow: wrap;
+    justify-content: space-between;
+
+    .example-card {
+        width: 49%;
+        margin-bottom: 1rem;
+        background-color: beige;
+    }
+}

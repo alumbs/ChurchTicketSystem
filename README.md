@@ -2,6 +2,17 @@
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 15.2.4.
 
+# Goal of this project:
+
+1. To be able to upload a list of tickets sold and be easily able to mark that payment has been received or not
+  Here are the compulsory excel columns:
+  - Name: contains the user's name
+  - NumberOfTickets : contains a number 0 to 100
+  - AmountPaid: a number
+  - HasPaid : contains yes or no
+  - DatePaid: any value 
+2. During the event, we want to be able to easily say when a ticket has been used to check in. Maybe we need checkmarks for each ticket a user has and when someone says they got the ticket from that person, we check it off as used
+
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.

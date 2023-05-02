@@ -1,0 +1,24 @@
+<section class="dashboard-container">
+    <h2>Welcome to the dashboard page</h2>
+
+    <p>Shown below are the functions we allow</p>
+
+    <div class="app-functions">
+        <mat-card class="example-card" *ngFor="let function of appFunctions">
+            <mat-card-header>
+                <mat-card-title>{{function.name}}</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <p [innerHtml]="function.description"></p>
+
+                <mat-divider></mat-divider>
+            </mat-card-content>
+            <mat-card-actions>
+                <button mat-raised-button color="accent" [disabled]="function.disabled" [routerLink]="function.url">Go
+                    to Page</button>
+            </mat-card-actions>
+        </mat-card>
+    </div>
+
+
+</section>

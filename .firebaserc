@@ -1,0 +1,14 @@
+{
+  "targets": {
+    "churchticketsystem": {
+      "hosting": {
+        "ChurchTicketSystem": [
+          "churchticketsystem"
+        ]
+      }
+    }
+  },
+  "projects": {
+    "default": "churchticketsystem"
+  }
+}
