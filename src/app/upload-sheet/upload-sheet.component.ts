@@ -4,6 +4,7 @@ import { ExcelSheet, Ticket } from '../models/ticket';
 import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc, deleteDoc, getDoc, query, where, getDocs } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable, ReplaySubject, Subject, map, take, tap } from 'rxjs';
 import { setDoc } from 'firebase/firestore';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 
 
@@ -32,10 +33,23 @@ export class UploadSheetComponent {
 
   excelRawRecord$ = new ReplaySubject<any[]>(1);
 
+  sheetTitle$ = new BehaviorSubject<string>('new_sheet');
+
   /**
    *
    */
-  constructor(private firestore: Firestore) {
+  constructor(private firestore: Firestore, private snackBar: MatSnackBar) {
+    this.sheetTitle$.pipe(
+      tap(val => {
+        console.log('New sheet title value', val);
+        if (this.newSheetToUpload) {
+          const newSheetName = val.replace(/[^\w ]/g, '').replace(' ', '');
+          this.newSheetToUpload.sheetName = newSheetName;
+
+          console.log('New sheet title value after replace', newSheetName);
+        }
+      })
+    ).subscribe();
   }
 
   incomingfile(event: any) {
@@ -152,7 +166,7 @@ export class UploadSheetComponent {
 
       const querySnapshot = await getDocs(q);
 
-      const userExists = !querySnapshot.empty;
+      // const userExists = !querySnapshot.empty;
 
       let userRecord: ExcelSheet | undefined = undefined;
 
@@ -164,21 +178,25 @@ export class UploadSheetComponent {
       });
 
       if (userRecord === undefined) {
-        journalCollection = this.getFirestoreJournalCollection(sheet.sheetName);
-        addDoc(journalCollection, { ...sheet },).then(result => {
-          // this.messageService.add({
-          //   severity: 'success',
-          //   summary: 'Journal Entry Added Successfully',
-          //   detail: `Add of ${userTicketInfo?.title} Successful`
-          // });
-
-          // After creating a new document, load it
-          getDoc(result).then(newDoc => {
-            const doc = { ...newDoc.data() } as ExcelSheet;
-            // const createdDateAsDate = new Date(Date.parse(doc.createdDate))
-            sheet = { ...doc };
+        setDoc(doc(this.firestore, this.excelSheetPath, sheet.sheetName), { ...sheet }).then(_result => {
+          this.snackBar.open('Save Success', 'Close', {
+            duration: 5000,
           });
         });
+        // addDoc(journalCollection, ,).then(result => {
+        //   // this.messageService.add({
+        //   //   severity: 'success',
+        //   //   summary: 'Journal Entry Added Successfully',
+        //   //   detail: `Add of ${userTicketInfo?.title} Successful`
+        //   // });
+
+        //   // After creating a new document, load it
+        //   getDoc(result).then(newDoc => {
+        //     const doc = { ...newDoc.data() } as ExcelSheet;
+        //     // const createdDateAsDate = new Date(Date.parse(doc.createdDate))
+        //     sheet = { ...doc };
+        //   });
+        // });
       } else {
         console.log('userExists ', JSON.stringify(userRecord));
 
@@ -186,6 +204,9 @@ export class UploadSheetComponent {
 
         updateDoc(docRef, { ...sheet, updatedDate: new Date().toISOString() })
           .then(_result => {
+            this.snackBar.open('Update Success', 'Close', {
+              duration: 5000,
+            });
             // this.messageService.add({
             //   severity: 'success',
             //   summary: 'Update Occurred Successfully',
@@ -320,12 +341,12 @@ export class UploadSheetComponent {
   //   // ).subscribe();
   // }
 
-  getFirestoreJournalCollection(...pathSegments: string[]): CollectionReference<DocumentData> {
+  getFirestoreJournalCollection(): CollectionReference<DocumentData> {
     // const journalListToUse: JournalList = newActiveJournalList;
 
     // console.log('The journalListToUse is', journalListToUse);
 
-    const journalCollection = collection(this.firestore, this.excelSheetPath, ...pathSegments);
+    const journalCollection = collection(this.firestore, this.excelSheetPath);
     return journalCollection;
   }
 

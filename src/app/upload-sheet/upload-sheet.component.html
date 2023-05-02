@@ -3,6 +3,12 @@
 </div>
 
 <div *ngIf="newSheetToUpload" class="d-flex flex-column">
+    <mat-form-field appearance="fill" class="sheet-title">
+        <mat-label>Please enter a sheet title</mat-label>
+        <input matInput [ngModel]="newSheetToUpload.sheetName" (ngModelChange)="sheetTitle$.next($event)">
+    </mat-form-field>
+
+
     <p>Please select the type of information in each excel column?</p>
     <mat-form-field appearance="fill" *ngFor="let col of newSheetToUpload.sheetFields">
         <mat-label>{{col.fieldName}}</mat-label>
