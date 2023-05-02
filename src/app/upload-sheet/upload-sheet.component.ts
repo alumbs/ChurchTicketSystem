@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
 import { WorkSheet, read, utils } from 'xlsx';
-import { Ticket } from '../models/ticket';
+import { ExcelSheet, Ticket } from '../models/ticket';
 import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc, deleteDoc, getDoc, query, where, getDocs } from '@angular/fire/firestore';
-import { Observable, map, take, tap } from 'rxjs';
+import { BehaviorSubject, Observable, ReplaySubject, Subject, map, take, tap } from 'rxjs';
 import { setDoc } from 'firebase/firestore';
+
+
 
 @Component({
   selector: 'app-upload-sheet',
@@ -13,18 +15,22 @@ import { setDoc } from 'firebase/firestore';
 export class UploadSheetComponent {
   file!: File;
 
-  excelSheetRecords!: Ticket[];
 
-  excelSheetPath = 'ifc_sheet_1';
+  fieldTypeList: string[] = [
+    'text', 'number', 'date', 'yes/no'
+  ]
 
-  displayedColumns: string[] = [
-    'Name',
-    'NumberOfTickets',
-    'AmountPaid',
-    'HasPaid',
-    'DatePaid'];
+  excelSheetRecords!: any[];
+
+  excelSheetPath = 'excelSheets';
+
+  displayedColumns: string[] = [];
 
   dbTickets$!: Observable<Ticket[]>;
+
+  newSheetToUpload!: ExcelSheet;
+
+  excelRawRecord$ = new ReplaySubject<any[]>(1);
 
   /**
    *
@@ -57,24 +63,141 @@ export class UploadSheetComponent {
 
       const excelRecords: any = utils.sheet_to_json(ws);
 
-      if (excelRecords && Array.isArray(excelRecords)) {
-        this.excelSheetRecords = excelRecords.map(r => {
-          return {
-            ...r,
-            HasPaid: r.HasPaid === 'yes' ? true : false,
-            DatePaid: r.DatePaid ? new Date(r.DatePaid).toISOString() : ''
-          } as Ticket;
+      if (excelRecords) {
+        this.excelRawRecord$.next(excelRecords);
+
+        console.log('excelRecords are', excelRecords);
+
+        this.newSheetToUpload = {
+          sheetName: 'newsheet ',
+          sheetFields: [],
+          sheetData: null
+        };
+
+        const rowWithMaxKeys = excelRecords.reduce(function (prev: any, current: any) {
+          return (Object.keys(prev) > Object.keys(current)) ? prev : current
         });
 
-        // setDoc(journalCollection, this.excelSheetRecords);
-        // this.addContactsToDb(excelRecordsAsJson);
-        console.log('this.excelSheetRecords', this.excelSheetRecords);
-
-        if (this.excelSheetRecords && this.excelSheetRecords.length > 0) {
-          this.excelSheetRecords.forEach(async (record) => await this.updateUserTicketInfo(record));
+        for (var key in rowWithMaxKeys) {
+          console.log('excelRecords key is', key);
+          this.newSheetToUpload.sheetFields.push({
+            fieldName: key,
+            fieldType: 'text'
+          });
         }
+
+        this.displayedColumns = this.newSheetToUpload.sheetFields.map(f => f.fieldName);
+
+        this.updateExcelSheet();
+      }
+
+      // if (excelRecords && Array.isArray(excelRecords)) {
+      //   this.excelSheetRecords = excelRecords.map(r => {
+      //     return {
+      //       ...r,
+      //       HasPaid: r.HasPaid === 'yes' ? true : false,
+      //       DatePaid: r.DatePaid ? new Date(r.DatePaid).toISOString() : ''
+      //     } as Ticket;
+      //   });
+
+      //   console.log('this.excelSheetRecords', this.excelSheetRecords);
+
+      //   if (this.excelSheetRecords && this.excelSheetRecords.length > 0) {
+      //     this.excelSheetRecords.forEach(async (record) => await this.updateUserTicketInfo(record));
+      //   }
+      // }
+    }
+  }
+
+  updateExcelSheet(makeFirebaseUpdate = false) {
+    this.excelRawRecord$.pipe(
+      tap(val => console.log('I get called', val)),
+      take(1),
+      map(excelRecords => {
+        return excelRecords.map(r => {
+          let record = { ...r };
+
+          this.newSheetToUpload.sheetFields.map(f => {
+            if (f.fieldType === 'date') {
+              record[f.fieldName] = r[f.fieldName] ? new Date(r[f.fieldName]).toISOString() : '';
+            } else if ((f.fieldType === 'yes/no')) {
+              record[f.fieldName] = r[f.fieldName] === 'yes' ? true : false;
+            }
+          })
+
+          return record;
+        })
+      }),
+      tap(records => {
+        this.newSheetToUpload.sheetData = records;
+
+        console.log('this.excelSheetRecords after mapping', records);
+
+        if (records && records.length > 0 && makeFirebaseUpdate) {
+          this.updateExcelSheetInfo(this.newSheetToUpload);
+          // this.excelSheetRecords.forEach(async (record) => await this.updateExcelSheetInfo(record));
+        }
+      })
+    ).subscribe();
+
+  }
+
+  async updateExcelSheetInfo(sheet: ExcelSheet) {
+    if (sheet) {
+      let journalCollection = this.getFirestoreJournalCollection();
+      // const createdDate = userTicketInfo.createdDateAsDate ? userTicketInfo.createdDateAsDate.toISOString() : new Date().toISOString();
+
+      // Create a query against the collection.
+      const q = query(journalCollection, where("id", "==", sheet.sheetName));
+
+      const querySnapshot = await getDocs(q);
+
+      const userExists = !querySnapshot.empty;
+
+      let userRecord: ExcelSheet | undefined = undefined;
+
+      querySnapshot.forEach(record => {
+        userRecord = {
+          ...record.data()
+        } as ExcelSheet;
+        return;
+      });
+
+      if (userRecord === undefined) {
+        journalCollection = this.getFirestoreJournalCollection(sheet.sheetName);
+        addDoc(journalCollection, { ...sheet },).then(result => {
+          // this.messageService.add({
+          //   severity: 'success',
+          //   summary: 'Journal Entry Added Successfully',
+          //   detail: `Add of ${userTicketInfo?.title} Successful`
+          // });
+
+          // After creating a new document, load it
+          getDoc(result).then(newDoc => {
+            const doc = { ...newDoc.data() } as ExcelSheet;
+            // const createdDateAsDate = new Date(Date.parse(doc.createdDate))
+            sheet = { ...doc };
+          });
+        });
+      } else {
+        console.log('userExists ', JSON.stringify(userRecord));
+
+        const docRef = doc(this.firestore, this.excelSheetPath, (userRecord as ExcelSheet).sheetName);
+
+        updateDoc(docRef, { ...sheet, updatedDate: new Date().toISOString() })
+          .then(_result => {
+            // this.messageService.add({
+            //   severity: 'success',
+            //   summary: 'Update Occurred Successfully',
+            //   detail: `Update of ${userTicketInfo?.title} Successful`
+            // });
+          })
+          .catch(error => {
+            console.log(error);
+          });
       }
     }
+
   }
 
   // setActiveEntry(entry: Ticket) {
@@ -197,12 +320,12 @@ export class UploadSheetComponent {
   //   // ).subscribe();
   // }
 
-  getFirestoreJournalCollection(): CollectionReference<DocumentData> {
+  getFirestoreJournalCollection(...pathSegments: string[]): CollectionReference<DocumentData> {
     // const journalListToUse: JournalList = newActiveJournalList;
 
     // console.log('The journalListToUse is', journalListToUse);
 
-    const journalCollection = collection(this.firestore, this.excelSheetPath);
+    const journalCollection = collection(this.firestore, this.excelSheetPath, ...pathSegments);
     return journalCollection;
   }
 
