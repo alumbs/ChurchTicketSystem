@@ -83,7 +83,7 @@ export class UploadSheetComponent {
         console.log('excelRecords are', excelRecords);
 
         this.newSheetToUpload = {
-          sheetName: 'newsheet ',
+          sheetName: 'newsheet',
           sheetFields: [],
           sheetData: null
         };
@@ -172,7 +172,8 @@ export class UploadSheetComponent {
 
       querySnapshot.forEach(record => {
         userRecord = {
-          ...record.data()
+          ...record.data(),
+          sheetName: record.id
         } as ExcelSheet;
         return;
       });
