@@ -27,9 +27,7 @@
     </div>
 </div>
 
-<div *ngIf="newSheetToUpload && newSheetToUpload.sheetData">
-    {{newSheetToUpload.sheetData | json}}
-</div>
+
 <table *ngIf="newSheetToUpload && newSheetToUpload.sheetData" mat-table [dataSource]="newSheetToUpload.sheetData">
     <ng-container [matColumnDef]="column.fieldName" *ngFor="let column of newSheetToUpload.sheetFields">
         <ng-container *ngIf="column.fieldType == 'date';else boolField">

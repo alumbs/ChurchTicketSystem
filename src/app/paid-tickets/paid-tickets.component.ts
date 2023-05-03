@@ -20,6 +20,9 @@ export class PaidTicketsComponent implements OnInit, AfterViewInit {
 
   dbTickets$!: Observable<Ticket[]>;
 
+  allExcelSheets: string[] = [];
+  selectedExcelSheet$ = new Subject<string>();
+
   filterBy$ = new BehaviorSubject<string>('');
   columnToFilterBy$ = new BehaviorSubject<string>('');
 
@@ -42,18 +45,19 @@ export class PaidTicketsComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     const collection = this.getFirestoreJournalCollection();
 
-    let excelSheets = [];
-
-    const excelSheets$ = collectionData(collection, { idField: 'id' }).pipe(
+    const excelSheetList$ = collectionData(collection, { idField: 'id' }).pipe(
       tap(sheets => {
-        excelSheets = sheets.map((s: DocumentData) => s['id']);
-        console.log('Excel sheets are ', excelSheets);
-      }),
-      map(values => values[0])
+        this.allExcelSheets = sheets.map((s: DocumentData) => s['id']);
+        console.log('Excel sheets are ', this.allExcelSheets);
+      })
+    );
+
+    const excelSheets$ = combineLatest([excelSheetList$, this.selectedExcelSheet$]).pipe(
+      map(([excelSheetList, selectedExcelSheet]) => excelSheetList.find(sheet => sheet['id'] === selectedExcelSheet))
     );
 
     combineLatest([excelSheets$, this.columnToFilterBy$, this.filterBy$]).pipe(
-      map(([data, columnToFilterBy, filterString]: [DocumentData, string, string]) => {
+      map(([data, columnToFilterBy, filterString]: [DocumentData | undefined, string, string]) => {
         console.log(' columnToFilterBy, filterString', columnToFilterBy, filterString);
 
         let result = data ? data as ExcelSheet : undefined;

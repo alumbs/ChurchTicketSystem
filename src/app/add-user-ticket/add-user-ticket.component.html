@@ -1,7 +1,5 @@
-<h1 mat-dialog-title>Hi</h1>
+<h1 mat-dialog-title>Please enter the new information?</h1>
 <div mat-dialog-content class="d-flex">
-    <p>Please enter the user's information?</p>
-
     <ng-container *ngFor="let column of data">
         <ng-container *ngIf="column.fieldType == 'date';else boolField">
             <mat-form-field appearance="fill">
