@@ -20,7 +20,8 @@ export class PaidTicketsComponent implements OnInit, AfterViewInit {
 
   dbTickets$!: Observable<Ticket[]>;
 
-  filterByName$ = new BehaviorSubject<string>('');
+  filterBy$ = new BehaviorSubject<string>('');
+  columnToFilterBy$ = new BehaviorSubject<string>('');
 
   updateExcelSheet$ = new Subject<ExcelSheet>();
 
@@ -50,14 +51,29 @@ export class PaidTicketsComponent implements OnInit, AfterViewInit {
       }),
       map(values => values[0])
     );
-    combineLatest([excelSheets$, this.filterByName$]).pipe(
-      // map(([data, _filterString]: [DocumentData, string]) => data ? (data as ExcelSheet).sheetData : []),//.filter((d: any) => d['Name'].toLowerCase().includes(filterString.toLowerCase())) : []),
-      tap(([data, _filterString]) => {
+
+    combineLatest([excelSheets$, this.columnToFilterBy$, this.filterBy$]).pipe(
+      map(([data, columnToFilterBy, filterString]: [DocumentData, string, string]) => {
+        console.log(' columnToFilterBy, filterString', columnToFilterBy, filterString);
+
+        let result = data ? data as ExcelSheet : undefined;
+
+        if (result && columnToFilterBy && filterString) {
+          const filteredData = result.sheetData.filter((d: any) => d[columnToFilterBy].toLowerCase().includes(filterString.trim().toLowerCase()));
+
+          result = {
+            ...result,
+            sheetData: filteredData
+          }
+        }
+
+        return result;
+      }),
+      tap((data) => {
         if (data) {
           const dataExcelSheet = data as ExcelSheet;
           this.displayedColumns = dataExcelSheet.sheetFields.map(f => f.fieldName);
           this.newSheetToUpload = dataExcelSheet;
-
 
           console.log('Filtered data is ', data);
           // const ticketData = data as Ticket[];

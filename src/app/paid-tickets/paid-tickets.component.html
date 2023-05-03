@@ -2,8 +2,17 @@
     <div class="d-flex">
         <mat-form-field appearance="fill">
             <mat-label>Search by name</mat-label>
-            <input matInput [ngModel]="filterByName$ | async" (ngModelChange)="filterByName$.next($event)">
+            <input matInput [ngModel]="filterBy$ | async" (ngModelChange)="filterBy$.next($event)">
         </mat-form-field>
+        <mat-form-field appearance="fill" *ngIf="displayedColumns">
+            <mat-label>Select a column to filter by:</mat-label>
+            <mat-select (valueChange)="columnToFilterBy$.next($event)">
+                <mat-option *ngFor="let col of displayedColumns" [value]="col">
+                    {{col}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+
         <button mat-raised-button color="accent" (click)="openDialog()">
             <mat-icon>add</mat-icon>
             Add New User
