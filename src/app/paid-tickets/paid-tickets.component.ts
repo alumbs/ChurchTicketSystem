@@ -159,15 +159,6 @@ export class PaidTicketsComponent implements OnInit, AfterViewInit {
   }
 
   openDialog(): void {
-    // const newUserTicket: Ticket = {
-    //   id: '',
-    //   Name: '',
-    //   NumberOfTickets: 5,
-    //   AmountPaid: 0,
-    //   HasPaid: false,
-    //   DatePaid: ''//new Date().toISOString()
-    // }
-
     const dialogRef = this.dialog.open(AddUserTicketComponent, {
       data: this.newSheetToUpload.sheetFields,
     });
@@ -176,8 +167,8 @@ export class PaidTicketsComponent implements OnInit, AfterViewInit {
       if (result) {
         console.log('The dialog was closed', result);
 
-        // const newTicketInfo = { ...result, DatePaid: result.DatePaid ? result.DatePaid.toISOString() : '' };
-        // this.updateUserTicketInfo(newTicketInfo);
+        this.newSheetToUpload.sheetData.push(result);
+        this.updateTable();
       }
     });
   }
@@ -187,60 +178,60 @@ export class PaidTicketsComponent implements OnInit, AfterViewInit {
     return journalCollection;
   }
 
-  async updateUserTicketInfo(userTicketInfo: Ticket) {
-    if (userTicketInfo) {
-      const journalCollection = this.getFirestoreJournalCollection();
+  // async updateUserTicketInfo(userTicketInfo: Ticket) {
+  //   if (userTicketInfo) {
+  //     const journalCollection = this.getFirestoreJournalCollection();
 
-      // Create a query against the collection.
-      const q = query(journalCollection, where("Name", "==", userTicketInfo.Name));
+  //     // Create a query against the collection.
+  //     const q = query(journalCollection, where("Name", "==", userTicketInfo.Name));
 
-      const querySnapshot = await getDocs(q);
+  //     const querySnapshot = await getDocs(q);
 
-      const userExists = !querySnapshot.empty;
+  //     const userExists = !querySnapshot.empty;
 
-      let userRecord: Ticket | undefined = undefined;
+  //     let userRecord: Ticket | undefined = undefined;
 
-      querySnapshot.forEach(record => {
-        userRecord = {
-          ...record.data(),
-          id: record.id
-        } as Ticket;
-        return;
-      });
+  //     querySnapshot.forEach(record => {
+  //       userRecord = {
+  //         ...record.data(),
+  //         id: record.id
+  //       } as Ticket;
+  //       return;
+  //     });
 
-      if (userRecord === undefined) {
-        addDoc(journalCollection, { ...userTicketInfo }).then(result => {
-          // this.messageService.add({
-          //   severity: 'success',
-          //   summary: 'Journal Entry Added Successfully',
-          //   detail: `Add of ${userTicketInfo?.title} Successful`
-          // });
+  //     if (userRecord === undefined) {
+  //       addDoc(journalCollection, { ...userTicketInfo }).then(result => {
+  //         // this.messageService.add({
+  //         //   severity: 'success',
+  //         //   summary: 'Journal Entry Added Successfully',
+  //         //   detail: `Add of ${userTicketInfo?.title} Successful`
+  //         // });
 
-          // After creating a new document, load it
-          getDoc(result).then(newDoc => {
-            const doc = { id: newDoc.id, ...newDoc.data() } as Ticket;
-            // const createdDateAsDate = new Date(Date.parse(doc.createdDate))
-            userTicketInfo = { ...doc };
-          });
-        });
-      } else {
-        console.log('userExists ', JSON.stringify(userRecord));
+  //         // After creating a new document, load it
+  //         getDoc(result).then(newDoc => {
+  //           const doc = { id: newDoc.id, ...newDoc.data() } as Ticket;
+  //           // const createdDateAsDate = new Date(Date.parse(doc.createdDate))
+  //           userTicketInfo = { ...doc };
+  //         });
+  //       });
+  //     } else {
+  //       console.log('userExists ', JSON.stringify(userRecord));
 
-        const docRef = doc(this.firestore, this.excelSheetPath, (userRecord as Ticket).id);
+  //       const docRef = doc(this.firestore, this.excelSheetPath, (userRecord as Ticket).id);
 
-        updateDoc(docRef, { ...userTicketInfo, updatedDate: new Date().toISOString() })
-          .then(_result => {
-            // this.messageService.add({
-            //   severity: 'success',
-            //   summary: 'Update Occurred Successfully',
-            //   detail: `Update of ${userTicketInfo?.title} Successful`
-            // });
-          })
-          .catch(error => {
-            console.log(error);
-          });
-      }
-    }
+  //       updateDoc(docRef, { ...userTicketInfo, updatedDate: new Date().toISOString() })
+  //         .then(_result => {
+  //           // this.messageService.add({
+  //           //   severity: 'success',
+  //           //   summary: 'Update Occurred Successfully',
+  //           //   detail: `Update of ${userTicketInfo?.title} Successful`
+  //           // });
+  //         })
+  //         .catch(error => {
+  //           console.log(error);
+  //         });
+  //     }
+  //   }
 
-  }
+  // }
 }
