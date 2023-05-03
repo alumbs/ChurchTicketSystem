@@ -39,7 +39,6 @@
                         <mat-label>Choose a date</mat-label>
                         <input matInput [matDatepicker]="picker" disabled="true" [ngModel]="element[column.fieldName]"
                             (ngModelChange)="updateDateField(element, column.fieldName,$event);">
-                        <mat-hint>MM/DD/YYYY</mat-hint>
                         <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
                         <mat-datepicker #picker disabled="false"></mat-datepicker>
                     </mat-form-field> </td>

@@ -89,7 +89,7 @@ export class UploadSheetComponent {
         };
 
         const rowWithMaxKeys = excelRecords.reduce(function (prev: any, current: any) {
-          return (Object.keys(prev) > Object.keys(current)) ? prev : current
+          return (Object.keys(prev).length > Object.keys(current).length) ? prev : current
         });
 
         for (var key in rowWithMaxKeys) {
@@ -161,22 +161,10 @@ export class UploadSheetComponent {
       let journalCollection = this.getFirestoreJournalCollection();
       // const createdDate = userTicketInfo.createdDateAsDate ? userTicketInfo.createdDateAsDate.toISOString() : new Date().toISOString();
 
-      // Create a query against the collection.
-      const q = query(journalCollection, where("id", "==", sheet.sheetName));
+      const excelSheetRef = doc(journalCollection, sheet.sheetName);
 
-      const querySnapshot = await getDocs(q);
-
-      // const userExists = !querySnapshot.empty;
-
-      let userRecord: ExcelSheet | undefined = undefined;
-
-      querySnapshot.forEach(record => {
-        userRecord = {
-          ...record.data(),
-          sheetName: record.id
-        } as ExcelSheet;
-        return;
-      });
+      const excelSheet = (await getDoc(excelSheetRef));
+      let userRecord: ExcelSheet | undefined = excelSheet.exists() ? { ...(excelSheet.data() as ExcelSheet), sheetName: excelSheet.id } : undefined;
 
       if (userRecord === undefined) {
         setDoc(doc(this.firestore, this.excelSheetPath, sheet.sheetName), { ...sheet }).then(_result => {
@@ -184,39 +172,11 @@ export class UploadSheetComponent {
             duration: 5000,
           });
         });
-        // addDoc(journalCollection, ,).then(result => {
-        //   // this.messageService.add({
-        //   //   severity: 'success',
-        //   //   summary: 'Journal Entry Added Successfully',
-        //   //   detail: `Add of ${userTicketInfo?.title} Successful`
-        //   // });
 
-        //   // After creating a new document, load it
-        //   getDoc(result).then(newDoc => {
-        //     const doc = { ...newDoc.data() } as ExcelSheet;
-        //     // const createdDateAsDate = new Date(Date.parse(doc.createdDate))
-        //     sheet = { ...doc };
-        //   });
-        // });
       } else {
-        console.log('userExists ', JSON.stringify(userRecord));
-
-        const docRef = doc(this.firestore, this.excelSheetPath, (userRecord as ExcelSheet).sheetName);
-
-        updateDoc(docRef, { ...sheet, updatedDate: new Date().toISOString() })
-          .then(_result => {
-            this.snackBar.open('Update Success', 'Close', {
-              duration: 5000,
-            });
-            // this.messageService.add({
-            //   severity: 'success',
-            //   summary: 'Update Occurred Successfully',
-            //   detail: `Update of ${userTicketInfo?.title} Successful`
-            // });
-          })
-          .catch(error => {
-            console.log(error);
-          });
+        this.snackBar.open(`An excel sheet with the name ${sheet.sheetName} already exists. Please change the name and try saving again`, 'Close', {
+          duration: 5000,
+        });
       }
     }
 
