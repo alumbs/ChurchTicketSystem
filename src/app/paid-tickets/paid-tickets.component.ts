@@ -159,25 +159,25 @@ export class PaidTicketsComponent implements OnInit, AfterViewInit {
   }
 
   openDialog(): void {
-    const newUserTicket: Ticket = {
-      id: '',
-      Name: '',
-      NumberOfTickets: 5,
-      AmountPaid: 0,
-      HasPaid: false,
-      DatePaid: ''//new Date().toISOString()
-    }
+    // const newUserTicket: Ticket = {
+    //   id: '',
+    //   Name: '',
+    //   NumberOfTickets: 5,
+    //   AmountPaid: 0,
+    //   HasPaid: false,
+    //   DatePaid: ''//new Date().toISOString()
+    // }
 
     const dialogRef = this.dialog.open(AddUserTicketComponent, {
-      data: newUserTicket,
+      data: this.newSheetToUpload.sheetFields,
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        // console.log('The dialog was closed', result);
+        console.log('The dialog was closed', result);
 
-        const newTicketInfo = { ...result, DatePaid: result.DatePaid ? result.DatePaid.toISOString() : '' };
-        this.updateUserTicketInfo(newTicketInfo);
+        // const newTicketInfo = { ...result, DatePaid: result.DatePaid ? result.DatePaid.toISOString() : '' };
+        // this.updateUserTicketInfo(newTicketInfo);
       }
     });
   }
