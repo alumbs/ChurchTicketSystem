@@ -1,56 +1,76 @@
 <div>
+    <div class="select-excel-sheet">
+        <h2>First select an excel sheet to update</h2>
+        <mat-form-field appearance="fill" *ngIf="allExcelSheets">
+            <mat-label>Select an excel sheet to update:</mat-label>
+            <mat-select (valueChange)="selectedExcelSheet$.next($event)">
+                <mat-option *ngFor="let col of allExcelSheets" [value]="col">
+                    {{col}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
     <div class="d-flex">
         <mat-form-field appearance="fill">
             <mat-label>Search by name</mat-label>
-            <input matInput [ngModel]="filterByName$ | async" (ngModelChange)="filterByName$.next($event)">
+            <input matInput [ngModel]="filterBy$ | async" (ngModelChange)="filterBy$.next($event)">
         </mat-form-field>
+        <mat-form-field appearance="fill" *ngIf="displayedColumns">
+            <mat-label>Select a column to filter by:</mat-label>
+            <mat-select (valueChange)="columnToFilterBy$.next($event)">
+                <mat-option *ngFor="let col of displayedColumns" [value]="col">
+                    {{col}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+
         <button mat-raised-button color="accent" (click)="openDialog()">
             <mat-icon>add</mat-icon>
             Add New User
         </button>
     </div>
-    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
-        <!-- Position Column -->
-        <ng-container matColumnDef="Name">
-            <th mat-header-cell *matHeaderCellDef> Name </th>
-            <td mat-cell *matCellDef="let element"> {{element.Name}} </td>
-        </ng-container>
 
-        <!-- Name Column -->
-        <ng-container matColumnDef="NumberOfTickets">
-            <th mat-header-cell *matHeaderCellDef> NumberOfTickets </th>
-            <td mat-cell *matCellDef="let element"> <input type="number" [(ngModel)]="element.NumberOfTickets"
-                    (ngModelChange)="updateElement$.next(element)"> </td>
-        </ng-container>
+    <table *ngIf="newSheetToUpload && newSheetToUpload.sheetData" class="mat-elevation-z8" mat-table
+        [dataSource]="dataSource">
+        <ng-container [matColumnDef]="column.fieldName" *ngFor="let column of newSheetToUpload.sheetFields">
+            <ng-container *ngIf="column.fieldType == 'date';else boolField">
+                <th mat-header-cell *matHeaderCellDef> {{column.fieldName}} </th>
+                <td mat-cell *matCellDef="let element"> <mat-form-field appearance="fill">
+                        <mat-label>Choose a date</mat-label>
+                        <input matInput [matDatepicker]="picker" disabled="true" [ngModel]="element[column.fieldName]"
+                            (ngModelChange)="updateDateField(element, column.fieldName,$event);">
+                        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                        <mat-datepicker #picker disabled="false"></mat-datepicker>
+                    </mat-form-field> </td>
+            </ng-container>
 
-        <!-- AmountPaid Column -->
-        <ng-container matColumnDef="AmountPaid">
-            <th mat-header-cell *matHeaderCellDef> AmountPaid </th>
-            <td mat-cell *matCellDef="let element"> <input type="number" [(ngModel)]="element.AmountPaid"
-                    (ngModelChange)="updateElement$.next(element)">
-            </td>
-        </ng-container>
+            <ng-template #boolField>
+                <ng-container *ngIf="column.fieldType == 'yes/no';else numberField">
 
-        <!-- HasPaid Column -->
-        <ng-container matColumnDef="HasPaid">
-            <th mat-header-cell *matHeaderCellDef> HasPaid </th>
-            <td mat-cell *matCellDef="let element"> <input type="checkbox" [(ngModel)]="element.HasPaid"
-                    (ngModelChange)="updateElement$.next(element)"> </td>
-        </ng-container>
+                    <th mat-header-cell *matHeaderCellDef> {{column.fieldName}} </th>
+                    <td mat-cell *matCellDef="let element"> <input type="checkbox"
+                            [(ngModel)]="element[column.fieldName]" (ngModelChange)="updateTable()">
+                    </td>
+                </ng-container>
+            </ng-template>
 
-        <!-- DatePaid Column -->
-        <ng-container matColumnDef="DatePaid">
-            <th mat-header-cell *matHeaderCellDef> DatePaid </th>
-            <td mat-cell *matCellDef="let element"> <mat-form-field appearance="fill">
-                    <mat-label>Choose a date</mat-label>
-                    <input matInput [matDatepicker]="picker" disabled="true" [(ngModel)]="element.DatePaid"
-                        (ngModelChange)="updateElement$.next(element)">
-                    <mat-hint>MM/DD/YYYY</mat-hint>
-                    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-                    <mat-datepicker #picker disabled="false"></mat-datepicker>
-                </mat-form-field> </td>
-        </ng-container>
+            <ng-template #numberField>
+                <ng-container *ngIf="column.fieldType == 'number';else textField">
 
+                    <th mat-header-cell *matHeaderCellDef> {{column.fieldName}} </th>
+                    <td mat-cell *matCellDef="let element"> <input type="number" [(ngModel)]="element[column.fieldName]"
+                            (ngModelChange)="updateTable()">
+                    </td>
+                </ng-container>
+            </ng-template>
+
+            <ng-template #textField>
+                <th mat-header-cell *matHeaderCellDef> {{column.fieldName}} </th>
+                <td mat-cell *matCellDef="let element"> <input type="text" [(ngModel)]="element[column.fieldName]"
+                        (ngModelChange)="updateTable()">
+            </ng-template>
+
+        </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>

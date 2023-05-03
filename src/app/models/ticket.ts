@@ -11,3 +11,14 @@ export interface Ticket {
     HasPaid: boolean,
     DatePaid: string
 }
+
+export interface ExcelColumn {
+    fieldName: string,
+    fieldType: 'text' | 'number' | 'date' | 'yes/no'
+}
+
+export interface ExcelSheet {
+    sheetName: string,
+    sheetFields: ExcelColumn[],
+    sheetData: any
+}
